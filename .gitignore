@@ -64,3 +64,6 @@ typings/
 .env
 
 ~$*.pptx
+
+.infura
+.secret
