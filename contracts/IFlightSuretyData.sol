@@ -4,10 +4,7 @@ pragma solidity ^0.8.16;
 interface IFlightSuretyData {
     function authorizeContract(address contractAddress) external;
 
-    function registerAirline(
-        address airlineAddress,
-        string memory airlineName
-    ) external;
+    function registerAirline(address airlineAddress) external;
 
     function isOperational() external view returns (bool operational);
 

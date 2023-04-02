@@ -152,14 +152,14 @@ contract FlightSuretyApp {
         string memory _flightNumber,
         uint256 _timestamp
     ) external payable requireIsOperational {
-        dataContract.buy.value(msg.value)(
+        dataContract.buy{value: msg.value}(
             msg.sender,
             _airlineAddress,
             _flightNumber,
             _timestamp
         );
 
-        bytes32 flightKey = dataContract.getFlightKey(
+        bytes32 flightKey = getFlightKey(
             _airlineAddress,
             _flightNumber,
             _timestamp
@@ -173,7 +173,12 @@ contract FlightSuretyApp {
         string memory _flightNumber,
         uint256 _timestamp
     ) external requireIsOperational {
-        dataContract.pay(msg.sender, _airlineAddress, _flightNumber, _timestamp);
+        dataContract.pay(
+            msg.sender,
+            _airlineAddress,
+            _flightNumber,
+            _timestamp
+        );
     }
 
     function processFlightStatus(
@@ -183,7 +188,11 @@ contract FlightSuretyApp {
         uint8 statusCode
     ) internal requireIsOperational {
         address userAddress;
-        bytes32 flightKey = getFlightKey(_airlineAddress, _flightNumber, _timestamp);
+        bytes32 flightKey = getFlightKey(
+            _airlineAddress,
+            _flightNumber,
+            _timestamp
+        );
 
         if (statusCode == STATUS_CODE_LATE_AIRLINE) {
             uint256 idx = 0;
@@ -232,16 +241,20 @@ contract FlightSuretyApp {
             abi.encodePacked(index, _airlineAddress, _flightNumber, _timestamp)
         );
 
-        oracleResponses[key] = ResponseInfo({
+        ResponseInfo memory response = ResponseInfo({
             requester: msg.sender,
             isOpen: true
         });
+
+        oracleResponses[key] = response;
+
+        oracleResponseAddresses[key][index] = new address[](0);
 
         emit OracleRequest(index, _airlineAddress, _flightNumber, _timestamp);
     }
 
     function fund() external payable {
-        dataContract.fund.value(msg.value)(msg.sender);
+        dataContract.fund{value: msg.value}(msg.sender);
     }
 
     /************************************************************************/
@@ -261,11 +274,13 @@ contract FlightSuretyApp {
     struct ResponseInfo {
         address requester;
         bool isOpen;
-        mapping(uint8 => address[]) responses;
     }
 
     mapping(address => Oracle) private oracles;
     mapping(bytes32 => ResponseInfo) private oracleResponses;
+
+    mapping(bytes32 => mapping(uint8 => address[]))
+        private oracleResponseAddresses;
 
     event FlightStatusInfo(
         address airline,
@@ -288,7 +303,7 @@ contract FlightSuretyApp {
         uint256 timestamp
     );
 
-    function isRegistredOracle() external view returns (bool, uint8[3]) {
+    function isRegistredOracle() external view returns (bool, uint8[3] memory) {
         bool isReg = oracles[msg.sender].isRegistered;
         uint8[3] memory indexes;
 
@@ -311,7 +326,7 @@ contract FlightSuretyApp {
         oracles[msg.sender] = Oracle({isRegistered: true, indexes: indexes});
     }
 
-    function getMyIndexes() public view returns (uint8[3]) {
+    function getMyIndexes() public view returns (uint8[3] memory) {
         require(
             oracles[msg.sender].isRegistered,
             "Not registered as an oracle"
@@ -343,16 +358,29 @@ contract FlightSuretyApp {
             "Flight or timestamp do not match oracle request"
         );
 
-        oracleResponses[key].responses[_statusCode].push(msg.sender);
+        oracleResponseAddresses[key][_statusCode].push(msg.sender);
 
-        emit OracleReport(_airlineAddress, _flightNumber, _timestamp, _statusCode);
+        emit OracleReport(
+            _airlineAddress,
+            _flightNumber,
+            _timestamp,
+            _statusCode
+        );
 
-        if (
-            oracleResponses[key].responses[_statusCode].length >= MIN_RESPONSES
-        ) {
-            emit FlightStatusInfo(_airlineAddress, _flightNumber, _timestamp, _statusCode);
+        if (oracleResponseAddresses[key][_statusCode].length >= MIN_RESPONSES) {
+            emit FlightStatusInfo(
+                _airlineAddress,
+                _flightNumber,
+                _timestamp,
+                _statusCode
+            );
 
-            processFlightStatus(_airlineAddress, _flightNumber, _timestamp, _statusCode);
+            processFlightStatus(
+                _airlineAddress,
+                _flightNumber,
+                _timestamp,
+                _statusCode
+            );
         }
     }
 
