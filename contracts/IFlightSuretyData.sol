@@ -2,24 +2,47 @@
 pragma solidity ^0.8.16;
 
 interface IFlightSuretyData {
-    function buy(address passenger, bytes32 flightId) external payable;
+    function authorizeContract(address contractAddress) external;
 
     function registerAirline(
-        address _airlineAddress,
-        string memory _airlineName,
-        bool _votingRequired
-    ) external;
-
-    function getNumberOfRegisteredAirlines() external view returns (uint256);
-
-    function registerFlight(
         address airlineAddress,
-        string memory flightNumber
+        string memory airlineName
     ) external;
 
-    function pay(address passenger, bytes32 flightId) external;
+    function isOperational() external view returns (bool operational);
 
-    function isOperational() external view returns (bool);
+    function isAirlineAuthorized() external view returns (bool);
 
-    function fund() external payable;
+    function getAirlinesAmount() external view returns (uint);
+
+    function buy(
+        address userAddress,
+        address airlineAddress,
+        string memory flight,
+        uint256 timestamp
+    ) external payable;
+
+    function setCreditInsuree(
+        address userAddress,
+        uint256 creditInsurees,
+        address airlineAddress,
+        string memory flight,
+        uint256 timestamp
+    ) external;
+
+    function pay(
+        address userAddress,
+        address airlineAddress,
+        string memory flight,
+        uint256 timestamp
+    ) external payable;
+
+    function fund(address airlineAddress) external payable;
+
+    function getInsurancePaymentAmount(
+        address userAddress,
+        address airlineAddress,
+        string memory flight,
+        uint256 timestamp
+    ) external returns (uint256);
 }
