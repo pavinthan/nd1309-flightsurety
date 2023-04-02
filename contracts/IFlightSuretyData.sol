@@ -8,6 +8,8 @@ interface IFlightSuretyData {
 
     function isOperational() external view returns (bool operational);
 
+    function isAirline(address airlineAddress) external view returns (bool);
+
     function isAirlineAuthorized() external view returns (bool);
 
     function getAirlinesAmount() external view returns (uint);

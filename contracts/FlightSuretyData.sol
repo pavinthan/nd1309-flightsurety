@@ -12,7 +12,7 @@ contract FlightSuretyData is IFlightSuretyData {
     /************************************************************************/
 
     struct Airline {
-        address airlineAddress;
+        bool isRegistered;
         bool isPendingDeposit;
     }
 
@@ -138,6 +138,10 @@ contract FlightSuretyData is IFlightSuretyData {
         return operational;
     }
 
+    function isAirline(address _airlineAddress) external view returns (bool) {
+        return airlines[_airlineAddress].isRegistered;
+    }
+
     function isAirlineAuthorized() external view returns (bool) {
         return !airlines[msg.sender].isPendingDeposit;
     }
@@ -181,7 +185,7 @@ contract FlightSuretyData is IFlightSuretyData {
     function registerAirline(
         address _airlineAddress
     ) public requireIsOperational requireIsCallerAuthorized {
-        Airline memory newAirline = Airline(_airlineAddress, true);
+        Airline memory newAirline = Airline(true, true);
         airlines[_airlineAddress] = newAirline;
         airlinesAmount++;
 
@@ -329,7 +333,7 @@ contract FlightSuretyData is IFlightSuretyData {
         uint amountToReturn = msg.value - 10 ether;
         payable(_airlineAddress).transfer(amountToReturn);
 
-        emit AirlineRegistred(airlines[_airlineAddress].airlineAddress);
+        emit AirlineRegistred(_airlineAddress);
     }
 
     function getFlightKey(
